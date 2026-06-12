@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moto G35 Terminal Mirror</title>
+    <style>
+        body { 
+            background-color: #1e1e1e; 
+            color: #d4d4d4; 
+            font-family: monospace; 
+            padding: 15px; 
+            margin: 0; 
+        }
+        h2 { 
+            color: #4fc1ff; 
+            margin-top: 0; 
+            font-family: sans-serif; 
+            border-bottom: 1px solid #333; 
+            padding-bottom: 10px; 
+            font-size: 1.2rem;
+        }
+        #log-window { 
+            white-space: pre-wrap; 
+            word-wrap: break-word; 
+            line-height: 1.5; 
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Live VS Code Terminal Logs (Moto G35)</h2>
+    <div id="log-window">Connecting to VS Code stream...</div>
+
+    <script>
+        const logWindow = document.getElementById('log-window');
+        
+        // Explicitly connect back to your PC across the Wi-Fi network
+        const socket = new WebSocket('ws://192.168.1.43:3000');
+
+        socket.onopen = () => {
+            logWindow.innerText = "Connected to Node.js stream!\nRun a command in VS Code to see it here...\n\n";
+        };
+
+        socket.onmessage = (event) => {
+            // Append the new logs and automatically scroll down your phone screen
+            logWindow.innerText += event.data + "\n";
+            window.scrollTo(0, document.body.scrollHeight);
+        };
+
+        socket.onclose = () => {
+            logWindow.innerText += "\n[Disconnected from PC server]";
+        };
+    </script>
+</body>
+</html>

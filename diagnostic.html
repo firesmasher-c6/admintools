@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VersatileMC - Firebase Diagnostic Tool</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0f172a;
+            color: #f1f5f9;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #60a5fa;
+        }
+        
+        .section {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .section h2 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: #93c5fd;
+        }
+        
+        .test-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .test-btn:hover {
+            background: #2563eb;
+        }
+        
+        .log {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 0.9rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .log-line {
+            margin-bottom: 6px;
+            padding: 4px 0;
+        }
+        
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .info { color: #60a5fa; }
+        .warning { color: #fbbf24; }
+        
+        .response-box {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .endpoint-info {
+            background: #064e3b;
+            border-left: 3px solid #10b981;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+        }
+        
+        .endpoint-info strong {
+            color: #10b981;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🔧 VersatileMC Firebase Diagnostic Tool</h1>
+    
+    <div class="section">
+        <h2>📡 Endpoint Information</h2>
+        <div class="endpoint-info">
+            <strong>Workers URL:</strong> https://versatilemc-servers.darreltampus39.workers.dev<br>
+            <strong>Firebase Config Endpoint:</strong> /api/firebase-config
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>🧪 Test 1: Check Workers Endpoint</h2>
+        <p>This will test if your Workers endpoint is accessible and returning the Firebase config.</p>
+        <button class="test-btn" onclick="testEndpoint()">Test Endpoint</button>
+        <div id="test1-log" class="log"></div>
+        <div id="test1-response" class="response-box" style="display: none;"></div>
+    </div>
+    
+    <div class="section">
+        <h2>🧪 Test 2: Parse Firebase Config</h2>
+        <p>This will verify the Firebase config can be parsed correctly.</p>
+        <button class="test-btn" onclick="testParseConfig()">Test Parse</button>
+        <div id="test2-log" class="log"></div>
+        <div id="test2-response" class="response-box" style="display: none;"></div>
+    </div>
+    
+    <div class="section">
+        <h2>🧪 Test 3: Initialize Firebase</h2>
+        <p>This will attempt to initialize Firebase with the config from your Workers.</p>
+        <button class="test-btn" onclick="testFirebaseInit()">Test Firebase Init</button>
+        <div id="test3-log" class="log"></div>
+    </div>
+    
+    <div class="section">
+        <h2>🧪 Test 4: Check Database Connection</h2>
+        <p>This will check if we can read from the 'servers' database path.</p>
+        <button class="test-btn" onclick="testDatabaseRead()">Test Database Read</button>
+        <div id="test4-log" class="log"></div>
+    </div>
+    
+    <div class="section">
+        <h2>📋 Summary</h2>
+        <div id="summary-log" class="log"></div>
+    </div>
+</div>
+
+<script type="module">
+    const WORKERS_URL = 'https://versatilemc-servers.darreltampus39.workers.dev';
+    let firebaseConfig = null;
+    let app = null;
+    let db = null;
+    
+    function log(containerId, message, type = 'info') {
+        const container = document.getElementById(containerId);
+        const line = document.createElement('div');
+        line.className = `log-line ${type}`;
+        line.textContent = `${new Date().toLocaleTimeString()} | ${message}`;
+        container.appendChild(line);
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    function showResponse(containerId, data) {
+        const container = document.getElementById(containerId);
+        container.style.display = 'block';
+        container.textContent = JSON.stringify(data, null, 2);
+    }
+    
+    window.testEndpoint = async () => {
+        const logId = 'test1-log';
+        const responseId = 'test1-response';
+        document.getElementById(logId).innerHTML = '';
+        document.getElementById(responseId).style.display = 'none';
+        
+        log(logId, '🔄 Fetching Firebase config...', 'info');
+        
+        try {
+            const response = await fetch(`${WORKERS_URL}/api/firebase-config`);
+            
+            log(logId, `📊 Response status: ${response.status} ${response.statusText}`, 'info');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data || typeof data !== 'object') {
+                throw new Error('Response is not valid JSON');
+            }
+            
+            log(logId, '✅ Successfully fetched Firebase config', 'success');
+            log(logId, `Found ${Object.keys(data).length} Firebase config properties`, 'success');
+            
+            // Check for required fields
+            const required = ['apiKey', 'authDomain', 'projectId', 'databaseURL'];
+            const missing = required.filter(k => !data[k]);
+            
+            if (missing.length > 0) {
+                log(logId, `⚠️ Missing required fields: ${missing.join(', ')}`, 'warning');
+            } else {
+                log(logId, '✅ All required Firebase config fields present', 'success');
+            }
+            
+            showResponse(responseId, data);
+            firebaseConfig = data;
+            
+        } catch (error) {
+            log(logId, `❌ Error: ${error.message}`, 'error');
+            log(logId, `Make sure the Workers endpoint is deployed and environment variables are set`, 'info');
+        }
+    };
+    
+    window.testParseConfig = async () => {
+        const logId = 'test2-log';
+        const responseId = 'test2-response';
+        document.getElementById(logId).innerHTML = '';
+        document.getElementById(responseId).style.display = 'none';
+        
+        if (!firebaseConfig) {
+            log(logId, '❌ No Firebase config loaded. Run Test 1 first.', 'error');
+            return;
+        }
+        
+        try {
+            log(logId, '🔍 Validating Firebase config...', 'info');
+            
+            const required = {
+                apiKey: 'string',
+                authDomain: 'string',
+                projectId: 'string',
+                storageBucket: 'string',
+                messagingSenderId: 'string',
+                appId: 'string',
+                databaseURL: 'string'
+            };
+            
+            for (const [key, type] of Object.entries(required)) {
+                if (!firebaseConfig[key]) {
+                    throw new Error(`Missing: ${key}`);
+                }
+                if (typeof firebaseConfig[key] !== type) {
+                    throw new Error(`${key} is not a ${type}`);
+                }
+                log(logId, `✅ ${key}: valid`, 'success');
+            }
+            
+            log(logId, '✅ All Firebase config fields are valid', 'success');
+            showResponse(responseId, firebaseConfig);
+            
+        } catch (error) {
+            log(logId, `❌ Validation error: ${error.message}`, 'error');
+        }
+    };
+    
+    window.testFirebaseInit = async () => {
+        const logId = 'test3-log';
+        document.getElementById(logId).innerHTML = '';
+        
+        if (!firebaseConfig) {
+            log(logId, '❌ No Firebase config loaded. Run Test 1 first.', 'error');
+            return;
+        }
+        
+        try {
+            log(logId, '📦 Loading Firebase modules...', 'info');
+            
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+            const { getDatabase } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+            
+            log(logId, '✅ Firebase modules loaded', 'success');
+            log(logId, '🔧 Initializing Firebase app...', 'info');
+            
+            app = initializeApp(firebaseConfig);
+            
+            log(logId, '✅ Firebase app initialized', 'success');
+            log(logId, '🔗 Getting database reference...', 'info');
+            
+            db = getDatabase(app);
+            
+            log(logId, '✅ Database reference obtained', 'success');
+            log(logId, '✅ Firebase is ready to use!', 'success');
+            
+        } catch (error) {
+            log(logId, `❌ Firebase initialization failed: ${error.message}`, 'error');
+        }
+    };
+    
+    window.testDatabaseRead = async () => {
+        const logId = 'test4-log';
+        document.getElementById(logId).innerHTML = '';
+        
+        if (!db) {
+            log(logId, '❌ Database not initialized. Run Test 3 first.', 'error');
+            return;
+        }
+        
+        try {
+            const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+            
+            log(logId, '📖 Reading from /servers path...', 'info');
+            
+            const snapshot = await get(ref(db, 'servers'));
+            
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                const serverCount = Object.keys(data).length;
+                log(logId, `✅ Found ${serverCount} servers in database`, 'success');
+                log(logId, `Server IDs: ${Object.keys(data).slice(0, 5).join(', ')}${serverCount > 5 ? '...' : ''}`, 'info');
+            } else {
+                log(logId, '⚠️ /servers path exists but has no data', 'warning');
+                log(logId, 'This is fine - just means no servers have been registered yet', 'info');
+            }
+            
+            log(logId, '✅ Database read successful!', 'success');
+            
+        } catch (error) {
+            log(logId, `❌ Database read failed: ${error.message}`, 'error');
+            log(logId, 'Check your Firestore database rules allow read access', 'info');
+        }
+    };
+    
+    // Run all tests on page load
+    window.addEventListener('load', async () => {
+        const summaryLog = 'summary-log';
+        document.getElementById(summaryLog).innerHTML = '';
+        
+        log(summaryLog, '🚀 Diagnostic tool loaded. Run tests to check your setup.', 'info');
+        log(summaryLog, 'Start with "Test Endpoint" to verify your Workers deployment.', 'info');
+    });
+</script>
+
+</body>
+</html>

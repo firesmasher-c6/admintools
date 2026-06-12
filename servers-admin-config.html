@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VersatileMC | Admin Panel</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-darker: #0a0e27;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --primary: #3b82f6;
+            --primary-light: #60a5fa;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --border-light: rgba(59, 130, 246, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Authentication Screen */
+        .auth-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .auth-container {
+            text-align: center;
+            background: var(--surface);
+            padding: 50px 40px;
+            border-radius: 20px;
+            border: 1px solid var(--border-light);
+            backdrop-filter: blur(10px);
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .auth-header {
+            margin-bottom: 10px;
+        }
+
+        .auth-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .auth-subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        .auth-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1.5px solid var(--border);
+            padding: 14px 16px;
+            color: var(--text);
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .auth-input:focus {
+            border-color: var(--primary-light);
+            background: rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+
+        .auth-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .auth-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+        }
+
+        .auth-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Admin Dashboard */
+        .admin-wrap {
+            display: none;
+            padding: 40px 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .admin-wrap.active {
+            display: block;
+        }
+
+        /* Header */
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .admin-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+            border: none;
+            padding: 11px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.85rem;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Creator Panel */
+        .creator-section {
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 50px;
+            backdrop-filter: blur(10px);
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 24px;
+            color: var(--text);
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            border-radius: 2px;
+        }
+
+        .creator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            align-items: end;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+
+        .input-field, .select-field {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            padding: 12px 14px;
+            color: var(--text);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .input-field:focus, .select-field:focus {
+            border-color: var(--primary-light);
+            background: rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+
+        .input-field::placeholder {
+            color: var(--text-muted);
+        }
+
+        .select-field {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
+        }
+
+        .hidden-field {
+            display: none;
+        }
+
+        .create-btn {
+            grid-column: auto;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .create-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Server Grid */
+        .servers-section {
+            margin-top: 50px;
+        }
+
+        .servers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 24px;
+        }
+
+        .server-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .server-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-light), transparent);
+        }
+
+        .server-card:hover {
+            border-color: var(--primary-light);
+            box-shadow: 0 12px 40px rgba(59, 130, 246, 0.15);
+            transform: translateY(-4px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .server-name {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text);
+            word-break: break-word;
+            flex: 1;
+        }
+
+        .delete-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        .delete-btn:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+
+        .card-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .card-input {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            color: var(--primary-light);
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            outline: none;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .card-input:focus {
+            border-color: var(--primary-light);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .port-input {
+            width: 100px;
+        }
+
+        .registry-key {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px dashed var(--border);
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: #64748b;
+            margin: 16px 0;
+            word-break: break-all;
+            user-select: all;
+        }
+
+        .registry-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .tag-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tag-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            transition: all 0.3s ease;
+        }
+
+        .tag-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--text-muted);
+        }
+
+        .tag-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-color: var(--primary-light);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .save-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+            border: none;
+            padding: 11px;
+            border-radius: 6px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .admin-wrap {
+                padding: 20px;
+            }
+
+            .admin-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .admin-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .creator-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .create-btn {
+                grid-column: 1;
+            }
+
+            .servers-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tag-group {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Authentication Screen -->
+<div id="auth" class="auth-screen">
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1>VersatileMC</h1>
+        </div>
+        <div class="auth-subtitle">Admin Server Registry</div>
+        <input type="password" id="pass" class="auth-input" placeholder="Master Key" onkeypress="if(event.key==='Enter') login()">
+        <button class="auth-btn" onclick="login()">Authorize Access</button>
+    </div>
+</div>
+
+<!-- Admin Dashboard -->
+<div id="dashboard" class="admin-wrap">
+    <div class="admin-header">
+        <div>
+            <h1>Server Registry</h1>
+            <div class="header-subtitle">Manage VersatileMC server listings</div>
+        </div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <!-- Creator Section -->
+    <div class="creator-section">
+        <div class="section-title">Add New Server</div>
+        
+        <div class="creator-grid">
+            <div class="input-group">
+                <label class="input-label">Display Name</label>
+                <input type="text" id="new-name" class="input-field" placeholder="e.g. VersatileMC Hub">
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Server IP</label>
+                <input type="text" id="new-ip" class="input-field" placeholder="play.server.com">
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Platform Type</label>
+                <select id="new-type" class="select-field" onchange="togglePortField()">
+                    <option value="java">Java Edition</option>
+                    <option value="bedrock">Bedrock Edition</option>
+                    <option value="crossplay">Crossplay (Both)</option>
+                </select>
+            </div>
+            
+            <div class="input-group hidden-field" id="port-group">
+                <label class="input-label">Port</label>
+                <input type="text" id="new-port" class="input-field" placeholder="19132">
+            </div>
+            
+            <button class="create-btn" onclick="addNewServer()">Create Server</button>
+        </div>
+    </div>
+
+    <!-- Servers Section -->
+    <div class="servers-section">
+        <div class="section-title">Active Servers</div>
+        <div class="servers-grid" id="admin-list">
+            <div class="empty-state">
+                <div class="empty-icon">📡</div>
+                <p>No servers configured yet</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+    import { getDatabase, ref, onValue, update, push, set, remove } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyC2evXMQpm211r4zgUzVwkK0bB8p2BXeKk",
+        authDomain: "opticoremc.firebaseapp.com",
+        databaseURL: "https://opticoremc-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "opticoremc",
+        storageBucket: "opticoremc.firebasestorage.app",
+        messagingSenderId: "1066323255235",
+        appId: "1:1066323255235:web:5d4f588ff339fbe68b6776"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    window.login = () => {
+        const pass = document.getElementById('pass').value;
+        if(pass === 'FIRESMASH') {
+            document.getElementById('auth').style.display = 'none';
+            document.getElementById('dashboard').classList.add('active');
+            sync();
+        } else {
+            alert('❌ Invalid Master Key');
+        }
+    };
+
+    window.logout = () => {
+        location.reload();
+    };
+
+    window.togglePortField = () => {
+        const type = document.getElementById('new-type').value;
+        const portGroup = document.getElementById('port-group');
+        portGroup.classList.toggle('hidden-field', type === 'java');
+    };
+
+    window.addNewServer = () => {
+        const name = document.getElementById('new-name').value.trim();
+        const ip = document.getElementById('new-ip').value.trim();
+        const type = document.getElementById('new-type').value;
+        const port = document.getElementById('new-port').value.trim() || (type === 'java' ? '' : '19132');
+
+        if(!name || !ip) {
+            alert('❌ Please fill in Server Name and IP address');
+            return;
+        }
+
+        const newServerRef = push(ref(db, 'servers'));
+        set(newServerRef, {
+            name: name,
+            ip: ip,
+            port: port,
+            isJava: (type !== 'bedrock'),
+            isBedrock: (type !== 'java'),
+            isCrossplay: (type === 'crossplay'),
+            rec: false,
+            opt: false,
+            exp: false,
+            pop: false
+        }).then(() => {
+            alert('✅ Server card created successfully!');
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-ip').value = '';
+            document.getElementById('new-port').value = '';
+        }).catch(error => {
+            alert('❌ Error: ' + error.message);
+        });
+    };
+
+    function sync() {
+        onValue(ref(db, 'servers'), (snap) => {
+            const list = document.getElementById('admin-list');
+            list.innerHTML = '';
+            const data = snap.val();
+
+            if(!data) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📡</div>
+                        <p>No servers configured yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            Object.keys(data).forEach(key => {
+                const s = data[key];
+                const card = document.createElement('div');
+                card.className = 'server-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="server-name">${s.name}</div>
+                        <button class="delete-btn" onclick="deleteServer('${key}')" title="Delete">×</button>
+                    </div>
+
+                    <div class="card-row">
+                        <input type="text" class="card-input" id="ip-${key}" value="${s.ip}" placeholder="IP">
+                        <input type="text" class="card-input port-input" id="port-${key}" value="${s.port || ''}" placeholder="Port">
+                    </div>
+
+                    <span class="registry-label">Firebase Registry Key</span>
+                    <div class="registry-key">${key}</div>
+
+                    <div class="tag-group">
+                        <button class="tag-btn ${s.isJava ? 'active' : ''}" onclick="tog('${key}', 'isJava', ${s.isJava})">☕ Java</button>
+                        <button class="tag-btn ${s.isBedrock ? 'active' : ''}" onclick="tog('${key}', 'isBedrock', ${s.isBedrock})">🎮 Bedrock</button>
+                        <button class="tag-btn ${s.isCrossplay ? 'active' : ''}" onclick="tog('${key}', 'isCrossplay', ${s.isCrossplay})">🌐 Crossplay</button>
+                        <button class="tag-btn ${s.rec ? 'active' : ''}" onclick="tog('${key}', 'rec', ${s.rec})">⭐ Recommended</button>
+                        <button class="tag-btn ${s.opt ? 'active' : ''}" onclick="tog('${key}', 'opt', ${s.opt})">⚡ Optimized</button>
+                        <button class="tag-btn ${s.exp ? 'active' : ''}" onclick="tog('${key}', 'exp', ${s.exp})">🧪 Experimental</button>
+                        <button class="tag-btn ${s.pop ? 'active' : ''}" onclick="tog('${key}', 'pop', ${s.pop})">🔥 Popular</button>
+                    </div>
+
+                    <button class="save-btn" onclick="saveDetails('${key}')">Save Changes</button>
+                `;
+                list.appendChild(card);
+            });
+        });
+    }
+
+    window.deleteServer = (id) => {
+        if(confirm('Are you sure you want to delete this server? This action cannot be undone.')) {
+            remove(ref(db, `servers/${id}`)).then(() => {
+                alert('✅ Server deleted successfully!');
+            }).catch(error => {
+                alert('❌ Error: ' + error.message);
+            });
+        }
+    };
+
+    window.tog = (id, field, val) => {
+        update(ref(db, `servers/${id}`), { [field]: !val });
+    };
+
+    window.saveDetails = (id) => {
+        const ip = document.getElementById(`ip-${id}`).value.trim();
+        const port = document.getElementById(`port-${id}`).value.trim();
+
+        if(!ip) {
+            alert('❌ Server IP cannot be empty');
+            return;
+        }
+
+        update(ref(db, `servers/${id}`), { 
+            ip: ip, 
+            port: port 
+        }).then(() => {
+            alert('✅ Server details updated!');
+        }).catch(error => {
+            alert('❌ Error: ' + error.message);
+        });
+    };
+</script>
+
+</body>
+</html>

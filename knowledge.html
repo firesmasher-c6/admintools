@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPTICORE Knowledge Manager</title>
+    <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f7f7f7;
+            --bg-tertiary: #efefef;
+            --accent-primary: #10a37f;
+            --accent-secondary: #764ba2;
+            --text-primary: #0d0d0d;
+            --text-secondary: #565869;
+            --border-color: #d1d5db;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-primary);
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border-color);
+            position: relative;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: var(--accent-primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-primary);
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-content {
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-group textarea,
+        .form-group input,
+        .form-group select {
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group textarea:focus,
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .batch-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .batch-card {
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .batch-card label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+
+        .status-message {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .status-message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .status-message.loading {
+            background: #dbeafe;
+            color: #0c2d6b;
+            border: 1px solid #bfdbfe;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .info-box {
+            background: #f0f9ff;
+            border-left: 4px solid var(--accent-primary);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .info-box strong {
+            color: var(--accent-primary);
+        }
+
+        .model-indicator {
+            display: inline-block;
+            padding: 6px 14px;
+            background: var(--accent-primary);
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .important-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .important-section .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+        }
+
+        code {
+            background: var(--bg-secondary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .batch-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                min-width: 100%;
+            }
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .firebase-url {
+            background: var(--bg-secondary);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin-top: 8px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 OPTICORE Knowledge Manager</h1>
+            <p>Manage knowledge batches for your AI models</p>
+        </div>
+
+        <div class="content">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('limitx1')">LimitX1 Knowledge</button>
+                <button class="tab-btn" onclick="switchTab('limitx2')">LimitX2 Knowledge</button>
+                <button class="tab-btn" onclick="switchTab('info')">ℹ️ Info</button>
+            </div>
+
+            <!-- LimitX1 Tab -->
+            <div id="limitx1" class="tab-content active">
+                <span class="model-indicator">⚡ LimitX1</span>
+                <div id="limitx1-status" class="status-message"></div>
+
+                <div class="info-box">
+                    <strong>ℹ️ Tip:</strong> Organize your knowledge into 4 batches for better context. Critical information goes in "Important Knowledge".
+                </div>
+
+                <div class="batch-grid">
+                    <div class="batch-card">
+                        <label for="limitx1-batch1">📦 Batch 1 - Core Facts</label>
+                        <textarea id="limitx1-batch1" placeholder="Add fundamental knowledge, definitions, core concepts..."></textarea>
+                    </div>
+                    <div class="batch-card">
+                        <label for="limitx1-batch2">📦 Batch 2 - Procedures</label>
+                        <textarea id="limitx1-batch2" placeholder="Add step-by-step processes, procedures, workflows..."></textarea>
+                    </div>
+                    <div class="batch-card">
+                        <label for="limitx1-batch3">📦 Batch 3 - Context</label>
+                        <textarea id="limitx1-batch3" placeholder="Add background information, context, history..."></textarea>
+                    </div>
+                    <div class="batch-card">
+                        <label for="limitx1-batch4">📦 Batch 4 - Examples</label>
+                        <textarea id="limitx1-batch4" placeholder="Add examples, case studies, edge cases..."></textarea>
+                    </div>
+                </div>
+
+                <div class="important-section">
+                    <div class="form-group">
+                        <label for="limitx1-important">⭐ Important Knowledge</label>
+                        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Critical rules and facts that override everything (highest priority)</p>
+                        <textarea id="limitx1-important" placeholder="Add critical information here..."></textarea>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="clearForm('limitx1')">Clear Form</button>
+                    <button class="btn btn-primary" onclick="loadKnowledge('limitx1')">Load Current</button>
+                    <button class="btn btn-primary" onclick="saveKnowledge('limitx1')">Save Knowledge</button>
+                </div>
+            </div>
+
+            <!-- LimitX2 Tab -->
+            <div id="limitx2" class="tab-content">
+                <span class="model-indicator">⚡ LimitX2</span>
+                <div id="limitx2-status" class="status-message"></div>
+
+                <div class="info-box">
+                    <strong>ℹ️ Tip:</strong> Organize your knowledge into 4 batches for better context. Critical information goes in "Important Knowledge".
+                </div>
+
+                <div class="batch-grid">
+                    <div class="batch-card">
+                        <label for="limitx2-batch1">📦 Batch 1 - Core Facts</label>
+                        <textarea id="limitx2-batch1" placeholder="Add fundamental knowledge, definitions, core concepts..."></textarea>
+                    </div>
+                    <div class="batch-card">
+                        <label for="limitx2-batch2">📦 Batch 2 - Procedures</label>
+                        <textarea id="limitx2-batch2" placeholder="Add step-by-step processes, procedures, workflows..."></textarea>
+                    </div>
+                    <div class="batch-card">
+                        <label for="limitx2-batch3">📦 Batch 3 - Context</label>
+                        <textarea id="limitx2-batch3" placeholder="Add background information, context, history..."></textarea>
+                    </div>
+                    <div class="batch-card">
+                        <label for="limitx2-batch4">📦 Batch 4 - Examples</label>
+                        <textarea id="limitx2-batch4" placeholder="Add examples, case studies, edge cases..."></textarea>
+                    </div>
+                </div>
+
+                <div class="important-section">
+                    <div class="form-group">
+                        <label for="limitx2-important">⭐ Important Knowledge</label>
+                        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Critical rules and facts that override everything (highest priority)</p>
+                        <textarea id="limitx2-important" placeholder="Add critical information here..."></textarea>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="clearForm('limitx2')">Clear Form</button>
+                    <button class="btn btn-primary" onclick="loadKnowledge('limitx2')">Load Current</button>
+                    <button class="btn btn-primary" onclick="saveKnowledge('limitx2')">Save Knowledge</button>
+                </div>
+            </div>
+
+            <!-- Info Tab -->
+            <div id="info" class="tab-content">
+                <div style="max-width: 600px;">
+                    <h2 style="margin-bottom: 20px; font-size: 20px;">How It Works</h2>
+
+                    <div class="info-box" style="background: #f3f4f6; border-left-color: #667eea;">
+                        <strong style="color: #667eea;">Firebase Realtime Database</strong><br><br>
+                        Your knowledge is stored in Firebase with this structure:
+                        <div class="firebase-url">opticore-client-portal-default-rtdb<br>/limitx1/knowledge.json<br>/limitx2/knowledge.json</div>
+                    </div>
+
+                    <h3 style="margin: 25px 0 15px 0; font-size: 16px;">Knowledge Structure</h3>
+                    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 12px; overflow-x: auto; margin-bottom: 20px;">
+<pre>{
+  "knowledge_batch_1": "Core facts and definitions",
+  "knowledge_batch_2": "Procedures and workflows",
+  "knowledge_batch_3": "Background context",
+  "knowledge_batch_4": "Examples and cases",
+  "important_knowledge": "Critical rules",
+  "last_updated": "2025-01-15T..."
+}</pre>
+                    </div>
+
+                    <h3 style="margin: 25px 0 15px 0; font-size: 16px;">How Workers Use Knowledge</h3>
+                    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                        <ol style="margin-left: 20px; line-height: 1.8;">
+                            <li><strong>User asks question</strong> → Sent to Cloudflare Worker</li>
+                            <li><strong>Worker fetches knowledge</strong> → From Firebase database</li>
+                            <li><strong>Worker adds context</strong> → Includes knowledge in prompt</li>
+                            <li><strong>Gemini API responds</strong> → Using the knowledge</li>
+                            <li><strong>Answer sent back</strong> → To your chat interface</li>
+                        </ol>
+                    </div>
+
+                    <h3 style="margin: 25px 0 15px 0; font-size: 16px;">Worker URLs</h3>
+                    <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 12px; overflow-x: auto; margin-bottom: 20px;">
+                        <strong>LimitX1:</strong><br>
+                        https://opticore-ai.darreltampus39.workers.dev/chat<br>
+                        https://opticore-ai.darreltampus39.workers.dev/init-knowledge<br><br>
+                        <strong>LimitX2:</strong><br>
+                        https://bloat.darreltampus39.workers.dev/chat<br>
+                        https://bloat.darreltampus39.workers.dev/init-knowledge
+                    </div>
+
+                    <div class="info-box">
+                        <strong>💡 Pro Tip:</strong> Save this page as a bookmark. Use the "Load Current" button to see what knowledge is already stored for each model.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_DQmXuKJSU6tP6JzV1SN4LJ__oRk0BDo",
+            authDomain: "opticore-client-portal.firebaseapp.com",
+            databaseURL: "https://opticore-client-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "opticore-client-portal",
+            storageBucket: "opticore-client-portal.firebasestorage.app",
+            messagingSenderId: "640369617139",
+            appId: "1:640369617139:web:a479d8ef64a09375066f86",
+            measurementId: "G-0SNG4NSYSL"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        window.clearForm = function(model) {
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`${model}-batch${i}`).value = '';
+            }
+            document.getElementById(`${model}-important`).value = '';
+            showStatus(model, '✨ Form cleared', 'success');
+        }
+
+        window.loadKnowledge = async function(model) {
+            showStatus(model, 'Loading knowledge...', 'loading');
+            try {
+                const knowledgeRef = ref(db, `${model}/knowledge`);
+                const snapshot = await get(knowledgeRef);
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    document.getElementById(`${model}-batch1`).value = data.knowledge_batch_1 || '';
+                    document.getElementById(`${model}-batch2`).value = data.knowledge_batch_2 || '';
+                    document.getElementById(`${model}-batch3`).value = data.knowledge_batch_3 || '';
+                    document.getElementById(`${model}-batch4`).value = data.knowledge_batch_4 || '';
+                    document.getElementById(`${model}-important`).value = data.important_knowledge || '';
+                    showStatus(model, '✅ Knowledge loaded successfully!', 'success');
+                } else {
+                    showStatus(model, '📭 No knowledge found - create a new one', 'error');
+                }
+            } catch (err) {
+                showStatus(model, `❌ Error loading: ${err.message}`, 'error');
+            }
+        }
+
+        window.saveKnowledge = async function(model) {
+            showStatus(model, 'Saving knowledge...', 'loading');
+
+            const knowledgeData = {
+                knowledge_batch_1: document.getElementById(`${model}-batch1`).value || 'No data',
+                knowledge_batch_2: document.getElementById(`${model}-batch2`).value || 'No data',
+                knowledge_batch_3: document.getElementById(`${model}-batch3`).value || 'No data',
+                knowledge_batch_4: document.getElementById(`${model}-batch4`).value || 'No data',
+                important_knowledge: document.getElementById(`${model}-important`).value || 'No data',
+                last_updated: new Date().toISOString(),
+                model: model
+            };
+
+            try {
+                // Determine worker URL based on model
+                const workerUrl = model === 'limitx1' 
+                    ? 'https://opticore-ai.darreltampus39.workers.dev/init-knowledge'
+                    : 'https://bloat.darreltampus39.workers.dev/init-knowledge';
+
+                console.log('Saving to:', workerUrl, knowledgeData);
+
+                const res = await fetch(workerUrl, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ knowledgeData }),
+                    mode: 'cors'
+                });
+
+                const result = await res.json();
+                console.log('Response:', result);
+
+                if (res.ok && result.success) {
+                    showStatus(model, `✅ Knowledge saved to ${model}!`, 'success');
+                } else {
+                    showStatus(model, `❌ Error: ${result.error || 'Unknown error'}`, 'error');
+                }
+            } catch (err) {
+                console.error('Fetch error:', err);
+                showStatus(model, `❌ Failed: ${err.message}`, 'error');
+            }
+        }
+
+        function showStatus(model, message, type) {
+            const statusEl = document.getElementById(`${model}-status`);
+            statusEl.textContent = message;
+            statusEl.className = `status-message show ${type}`;
+            
+            if (type === 'success') {
+                setTimeout(() => statusEl.classList.remove('show'), 4000);
+            }
+        }
+    </script>
+</body>
+</html>
